@@ -14,13 +14,17 @@ It learns a transformation $G$ that maps one function to another:
 
 $$G: u(x) \to v(x)$$  
 
-</p>
-
-
-
-
 where $u(x)$ is the input function and $v(x)$ is the output function.
 
+<div align="center">
+  <img src="./FNO 1.png" alt="Sample of a PDE">
+</div>
 
 
-PDE solutions function as operators that map between function spaces, taking inputs like initial conditions, boundary conditions, and source terms to produce the corresponding solution.
+PDE solutions function as operators that map between function spaces, taking inputs like initial conditions, boundary conditions, and source terms to produce the corresponding solution. Neural Operators are a class of data-driven models designed to be capable of handling and generalizing across different representations, including varying mesh refinements.
+
+# Fourier Layer
+Since the inputs and outputs of partial differential equations (PDEs) are continuous functions, representing them in Fourier space is often more efficient.
+
+In the spatial domain, convolution corresponds to pointwise multiplication in the Fourier domain. To apply the (global) convolution operator, we first perform a Fourier transform, followed by a linear transformation, and then an inverse Fourier transform.
+
