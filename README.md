@@ -1,4 +1,4 @@
-# What are Partial Differential Equations?
+# Partial Differential Equations
 Partial Differential Equations (PDEs) are mathematical equations that involve multiple independent variables, their partial derivatives, and an unknown function. They describe how a quantity changes with respect to several variables and are fundamental in modeling various physical, engineering, and natural phenomena, such as heat conduction, wave propagation, fluid dynamics, electromagnetism, and quantum mechanics.
 
 # Fourier-Neural-Operator
@@ -220,23 +220,21 @@ plt.grid(True, linestyle=':')
 plt.tight_layout()
 plt.show()
 ```
+Sample Output:
+```
 Input Data Shape: torch.Size([1000, 1001, 2])
 Output Data Shape: torch.Size([1000, 1001])
 Number of Samples: 1000
 Time Steps: 1001
 Number of Features in Input: 2
-
+```
 <div align="center">
-  <img src="./FNO 1.png" alt="Sample of a PDE">
+  <img src="./sample_629.png" alt="Sample 629">
 </div>
 
 
-```
-
-```
-
-
 # FNO1d Model
+
 
 ``` 
 # Define the Fourier Neural Operator (FNO) for 1D problems
