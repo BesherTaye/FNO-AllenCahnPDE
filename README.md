@@ -1,4 +1,4 @@
-# Partial Differential Equations
+# 1D Fourier Neural Operator for the Allen Cahn Equation
 Partial Differential Equations (PDEs) are mathematical equations that involve multiple independent variables, their partial derivatives, and an unknown function. They describe how a quantity changes with respect to several variables and are fundamental in modeling various physical, engineering, and natural phenomena, such as heat conduction, wave propagation, fluid dynamics, electromagnetism, and quantum mechanics.
 
 # Fourier-Neural-Operator
