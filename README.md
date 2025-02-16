@@ -830,9 +830,9 @@ Below is a function that creates a summary table comparing multiple models based
 
 | Model Index | Model     | Test MSE  | Test MAE  | Test RMSE | Test R²   | Test Relative L2 (%) | Min Test Loss | Total Parameters |
 |------------|----------|-----------|-----------|-----------|-----------|----------------------|---------------|------------------|
-| 0          | FNO1d    | 0.002351  | 0.019859  | 0.043836  | 0.996572  | 5.293022             | 0.002130      | 211393           |
-| 1          | FNO2_1d  | 0.003570  | 0.029459  | 0.057029  | 0.994789  | 6.972500             | 0.001887      | 350785           |
-| 2          | CNNModel | 0.584649  | 0.657924  | 0.762959  | 0.146385  | 0.921221             | 0.567342      | 574241           |
+| 0          | FNO1d    | $$0.002351$$  | $$0.019859$$  | $$0.043836$$  | $$0.996572$$  | $$5.293022$$             | $$0.002130$$      | $$211393$$           |
+| 1          | FNO2_1d  | $$0.003570$$  | $$0.029459$$  | $$0.057029$$  | $$0.994789$$  | $$6.972500$$             | $$0.001887$$      | $$350785$$           |
+| 2          | CNNModel | $$0.584649$$  | $$0.657924$$  | $$0.762959$$  | $$0.146385$$  | $$0.921221$$             | $$0.567342$$      | $$574241$$           |
 
 
 As we can see, FNO1d outperforms both FNO2_1d and CNNModel across all metrics. It achieves the lowest error, highest R² score, and best overall predictive performance. Moreover, adding more Fourier layers in FNO2_1d did not lead to improvements, as its error metrics are slightly worse than FNO1d. The CNN model performs significantly worse than both FNO models, despite having the highest number of parameters.
