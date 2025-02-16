@@ -1,10 +1,3 @@
-
-
-
-<div align="center">
-  <img src="./models_viz/figs/cnn_model.png" alt="cnn_model.png">
-</div>
-
 # Fourier Neural Operators (FNOs) for Learning the 1D Allen Cahn Equation
 
 In this project, we focus on learning the **1D Allen–Cahn equation** using a **Fourier neural operator (FNO) model**. The Allen–Cahn equation is a reaction-diffusion PDE that describes phase separation in multi-phase systems:
@@ -190,198 +183,21 @@ We can see that increasing the number of **Fourier layers** did not significantl
 
 ## 2. Convolutional Neural Networks (CNN)
 
-In this section, we investigate the use of Convolutional Neural Networks (CNNs) for solving the Allen-Cahn equation.
+Next, we investigate the use of Convolutional Neural Networks (CNNs) for solving the Allen-Cahn equation.
 
 The goal is to evaluate how two model architectures (FNOs & CNNs) perform when applied to the same problem, focusing on their ability to approximate solutions to the Allen-Cahn equation effectively.
 
-## CNN Model
 
-```python
-class CNNModel(nn.Module):
-    def __init__(self, input_channels=1, output_channels=1):
-        super(CNNModel, self).__init__()
+<div align="center">
+  <img src="./models_viz/figs/cnn_model.png" alt="cnn_model.png">
+</div>
 
-        # Expanded number of layers and increased the number of filters
-        self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv1d(64, 128, kernel_size=3, padding=1)  
-        self.conv4 = nn.Conv1d(128, 128, kernel_size=3, padding=1) 
-        self.conv5 = nn.Conv1d(128, 256, kernel_size=3, padding=1) 
-        self.conv6 = nn.Conv1d(256, 512, kernel_size=3, padding=1)  
 
-        self.conv7 = nn.Conv1d(512, output_channels, kernel_size=3, padding=1)  # Output layer
+Our **1D CNN model** is designed for sequence-based regression tasks. It consists of **seven convolutional layers** with increasing filter sizes (from 32 to 512), followed by an **adaptive average pooling layer** to ensure a fixed output size of 1001. Each convolutional layer applies a **ReLU activation**, except for the final output layer. The model takes **two input channels** (e.g., initial conditions and spatial coordinates) and outputs a **single-channel prediction**. 
 
-        # Adaptive average pooling to adjust the output size to 1001
-        self.pool = nn.AdaptiveAvgPool1d(1001)
+The optimizer used is **Adam** with a learning rate of **0.001** and **weight decay of \(1e-5\)**. A **StepLR scheduler** reduces the learning rate every **50 epochs** by a factor of **0.5**. The **MSE loss function** is minimized, while additional metrics such as **MAE, RMSE, R² score, and relative L2 error** are computed during training and evaluation. The model is trained on a **GPU (if available)** and iterates over multiple epochs while storing training and test loss histories for performance tracking.
 
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        # Ensure x is 3D: [batch_size, channels, sequence_length]
-        if len(x.shape) == 4:  # Check for extra dimension
-            x = x.squeeze(-1)  # Remove the extra dimension
-
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.relu(self.conv3(x))
-        x = self.relu(self.conv4(x))
-        x = self.relu(self.conv5(x))
-        x = self.relu(self.conv6(x))
-        x = self.conv7(x)  # Final convolution layer
-
-        x = self.pool(x)  # Resize to 1001 length if necessary
-
-        return x
-```
-
-## Training the CNN Model
-
-```python
-train_mse_history = []
-train_mae_history = []
-train_rmse_history = []
-train_relative_l2_history = []
-
-test_mse_history = []
-test_mae_history = []
-test_rmse_history = []
-test_relative_l2_history = []  
-test_r2_history = []
-```
-
-```python
-import torch.optim as optim
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-cnn_model = CNNModel(input_channels=2, output_channels=1).to(device)
-
-# Define optimizer and scheduler
-optimizer = optim.Adam(cnn_model.parameters(), lr=learning_rate, weight_decay=1e-5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
-
-# Loss functions
-mse_loss_fn = nn.MSELoss()
-mae_loss_fn = nn.L1Loss()
-
-# Training Loop
-for epoch in range(epochs):
-    cnn_model.train()
-    train_mse, train_mae, train_rmse, train_relative_l2 = 0.0, 0.0, 0.0, 0.0
-
-    for step, (input_batch, output_batch) in enumerate(training_set):
-        optimizer.zero_grad()
-
-        input_batch = input_batch.view(input_batch.shape[0], 2, -1)  # Ensure correct shape
-        output_pred_batch = cnn_model(input_batch).squeeze(1)
-
-        # Compute loss values
-        loss_mse = mse_loss_fn(output_pred_batch, output_batch)
-        loss_mse.backward()
-        optimizer.step()
-
-        loss_mae = mae_loss_fn(output_pred_batch, output_batch)
-        loss_rmse = torch.sqrt(loss_mse)
-
-        relative_l2 = torch.norm(output_pred_batch - output_batch) / torch.norm(output_batch)
-
-        train_mse += loss_mse.item()
-        train_mae += loss_mae.item()
-        train_rmse += loss_rmse.item()
-        train_relative_l2 += relative_l2.item()
-
-    train_mse /= len(training_set)
-    train_mae /= len(training_set)
-    train_rmse /= len(training_set)
-    train_relative_l2 /= len(training_set)
-
-    train_mse_history.append(train_mse)
-    train_mae_history.append(train_mae)
-    train_rmse_history.append(train_rmse)
-    train_relative_l2_history.append(train_relative_l2)
-
-    scheduler.step()
-
-    # Evaluation
-    cnn_model.eval()
-    test_mse, test_mae, test_rmse, test_r2, test_relative_l2 = 0.0, 0.0, 0.0, 0.0, 0.0
-
-    with torch.no_grad():
-        for step, (input_batch, output_batch) in enumerate(testing_set):
-            input_batch = input_batch.view(input_batch.shape[0], 2, -1)  
-            output_pred_batch = cnn_model(input_batch).squeeze(1)
-
-            mse = mse_loss_fn(output_pred_batch, output_batch)
-            mae = mae_loss_fn(output_pred_batch, output_batch)
-            rmse = torch.sqrt(mse)
-
-            # Calculate Relative L2 Error
-            relative_l2 = torch.norm(output_pred_batch - output_batch) / torch.norm(output_batch)
-
-            ss_total = torch.sum((output_batch - torch.mean(output_batch)) ** 2)
-            ss_residual = torch.sum((output_batch - output_pred_batch) ** 2)
-            r2_score = 1 - (ss_residual / ss_total)
-
-            test_mse += mse.item()
-            test_mae += mae.item()
-            test_rmse += rmse.item()
-            test_relative_l2 += relative_l2.item()
-            test_r2 += r2_score.item()
-
-        # Average out the metrics
-        test_mse /= len(testing_set)
-        test_mae /= len(testing_set)
-        test_rmse /= len(testing_set)
-        test_relative_l2 /= len(testing_set)
-        test_r2 /= len(testing_set)
-
-        test_mse_history.append(test_mse)
-        test_mae_history.append(test_mae)
-        test_rmse_history.append(test_rmse)
-        test_relative_l2_history.append(test_relative_l2)
-        test_r2_history.append(test_r2)
-
-   # Print training and test metrics in a table format
-        if epoch % freq_print == 0:
-          print(f"\nEpoch: {epoch}")
-          print(f"{'Metric':<20}{'Train':<20}{'Test'}")
-          print("-" * 60)
-          print(f"{'MSE':<20}{train_mse:<20f}{test_mse:.6f}")
-          print(f"{'MAE':<20}{train_mae:<20f}{test_mae:.6f}")
-          print(f"{'RMSE':<20}{train_rmse:<20f}{test_rmse:.6f}")
-          print(f"{'R²':<20}{'-':<20}{test_r2:.6f}")  # R² is only for the test set
-          print(f"{'Relative L2 (%)':<20}{'-':<20}{test_relative_l2:.6f}%")  # Only for test
-```
-
-Last Iterated Outputs:
-
-```
-.
-.
-.
-Epoch: 28
-Metric              Train               Test
-------------------------------------------------------------
-MSE                 0.517000            0.606153
-MAE                 0.606281            0.644920
-RMSE                0.718095            0.776237
-R²                  -                   0.115099
-Relative L2 (%)     -                   0.937226%
-
-Epoch: 29
-Metric              Train               Test
-------------------------------------------------------------
-MSE                 0.501254            0.584649
-MAE                 0.597721            0.657924
-RMSE                0.707504            0.762959
-R²                  -                   0.146385
-Relative L2 (%)     -                   0.921221%
-```
-
-```python
-model_summary(cnn_model)
-```
-
+A simple diagram showcasing the overall architecture can be found below:
 ```
 +--------------+------------+
 |   Modules    | Parameters |
@@ -405,34 +221,30 @@ Total Trainable Params: 574241
 574241
 ```
 
-CNN Model Predictions:
+The CNN model predictions did not display optimal prediction capabilities:
 
 <div align="center">
   <img src="./figures/true_vs_approx_cnn.png" alt="CNN Predictions">
 </div>
 
 
-# FNO vs CNN
+## FNO vs CNN
 
-In this section, we compare the performance of Fourier Neural Operators (FNO) and Convolutional Neural Networks (CNNs) in solving the Allen-Cahn equation.
+We numerically compare the performance of Fourier Neural Operators (FNO) and Convolutional Neural Networks (CNNs) in solving the Allen-Cahn equation.
 
-## Comparing Metrics
-
-The Testing Loss Curve compares the performance of the FNO, FNO_2, and CNN models over 30 epochs.
+The testing loss curve compares the training performance of the FNO, FNO_2, and CNN models over 30 epochs.
 
 <div align="center">
   <img src="./figures/testing_loss_curve_comparison.png" alt="CNN Predictions">
 </div>
 
-
-Below is a function that creates a summary table comparing multiple models based on their evaluation metrics. 
+Computed error metrics can be found below:
 
 | Model Index | Model     | Test MSE  | Test MAE  | Test RMSE | Test R²   | Test Relative L2 (%) | Min Test Loss | Total Parameters |
 |------------|----------|-----------|-----------|-----------|-----------|----------------------|---------------|------------------|
 | 0          | FNO1d    | $$0.002351$$  | $$0.019859$$  | $$0.043836$$  | $$0.996572$$  | $$5.293022$$             | $$0.002130$$      | $$211393$$           |
 | 1          | FNO2_1d  | $$0.003570$$  | $$0.029459$$  | $$0.057029$$  | $$0.994789$$  | $$6.972500$$             | $$0.001887$$      | $$350785$$           |
 | 2          | CNNModel | $$0.584649$$  | $$0.657924$$  | $$0.762959$$  | $$0.146385$$  | $$0.921221$$             | $$0.567342$$      | $$574241$$           |
-
 
 As we can see, FNO1d outperforms both FNO2_1d and CNNModel across all metrics. It achieves the lowest error, highest R² score, and best overall predictive performance. Moreover, adding more Fourier layers in FNO2_1d did not lead to improvements, as its error metrics are slightly worse than FNO1d. The CNN model performs significantly worse than both FNO models, despite having the highest number of parameters.
 
