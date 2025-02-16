@@ -835,10 +835,6 @@ Model	Test MSE	Test MAE	Test RMSE	Test R²	Test Relative L2 (%)	Min Test Loss	To
 ```
 
 
-As we can see, FNO1d outperforms both FNO2_1d and CNNModel across all metrics. It achieves the lowest error, highest R² score, and best overall predictive performance.
-
-Moreover, adding more Fourier layers in FNO2_1d did not lead to improvements, as its error metrics are slightly worse than FNO1d.
-
-CNNModel performs significantly worse than both FNO models, despite having the highest number of parameters.
+As we can see, FNO1d outperforms both FNO2_1d and CNNModel across all metrics. It achieves the lowest error, highest R² score, and best overall predictive performance. Moreover, adding more Fourier layers in FNO2_1d did not lead to improvements, as its error metrics are slightly worse than FNO1d. The CNN model performs significantly worse than both FNO models, despite having the highest number of parameters.
 
 
