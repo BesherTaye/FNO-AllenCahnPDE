@@ -539,13 +539,65 @@ Total Trainable Params: 211393
 211393
 ```
 
-# Testing Model Results
+# Testing FNO1d Model Results
 
 In the following section, we explore the visual results of the Fourier Neural Operator (FNO) model on the test dataset. The predicted outputs are compared with the ground truth, providing insights into the model's ability to learn and generalize patterns in 1D regression tasks.  
 
 These visualizations highlight the model's performance by showcasing the predicted and actual values, helping assess accuracy and error distribution across different test samples.  
 
 The following plots display the model's predictions:
+
+<div align="center">
+  <img src="./true_vs_approx.png" alt="FNO1d Predictions">
+</div>
+
+
+# Fourier Layers
+
+To evaluate how the **Fourier Neural Operator's (FNO)** predictive capability is affected, we developed a new model, **FNO2_1d**, using the same hyperparameters but with additional **Fourier layers**. By increasing the model depth, we aim to assess whether the extra layers enhance accuracy and generalization in 1D regression tasks.  
+
+The following sections compare the performance of **FNO1d** and **FNO2_1d**, analyzing their predictions and error metrics on the test dataset.
+
+```python
+fno_2 = FNO2_1d(modes, width)
+```
+
+```python
+model_summary(fno_2)
+```
+
+```
++---------------------+------------+
+|       Modules       | Parameters |
++---------------------+------------+
+|   linear_p.weight   |    128     |
+|    linear_p.bias    |     64     |
+|   spect1.weights1   |   65536    |
+|   spect2.weights1   |   65536    |
+|   spect3.weights1   |   65536    |
+|   spect4.weights1   |   65536    |
+|   spect5.weights1   |   65536    |
+|     lin0.weight     |    4096    |
+|      lin0.bias      |     64     |
+|     lin1.weight     |    4096    |
+|      lin1.bias      |     64     |
+|     lin2.weight     |    4096    |
+|      lin2.bias      |     64     |
+|     lin3.weight     |    4096    |
+|      lin3.bias      |     64     |
+|     lin4.weight     |    4096    |
+|      lin4.bias      |     64     |
+|   linear_q.weight   |    2048    |
+|    linear_q.bias    |     32     |
+| output_layer.weight |     32     |
+|  output_layer.bias  |     1      |
++---------------------+------------+
+Total Trainable Params: 350785
+350785
+```
+
+```
+```
 
 
 
