@@ -492,7 +492,8 @@ R²                  -                   0.996572
 Relative L2 (%)     -                   5.293022%
 ```
 
-To further understand the model architecture, the model is summarized using the function below:
+To further understand the model architecture, we summarize its structure using the function below. This summary provides insights into the number of layers, parameters, and computational complexity, helping evaluate the impact of architectural modifications on model performance.
+
 ```python
 def model_summary(model):
     table = PrettyTable(["Modules", "Parameters"])
@@ -595,13 +596,234 @@ model_summary(fno_2)
 Total Trainable Params: 350785
 350785
 ```
+FNO2_1d Model Predictions:
+
+<div align="center">
+  <img src="./true_vs_approx_fno2.png" alt="FNO2d Predictions">
+</div>
+
+As we can see, increasing the number of **Fourier layers** did not significantly improve the model's predictive ability. While the additional layers slightly influenced the results, the overall effect on accuracy and generalization was minimal. This suggests that simply increasing the depth of the Fourier layers may not always lead to better performance and that other factors, such as data quality, regularization, or alternative architectural modifications, might play a more crucial role in enhancing the model’s predictions.
+
+
+# FNO vs CNN
+
+In this section, we explore the comparison between Fourier Neural Operators (FNO) and Convolutional Neural Networks (CNN) for solving the Allen-Cahn equation.
+
+The goal is to evaluate how these two model architectures perform when applied to the same problem, focusing on their ability to approximate solutions to the Allen-Cahn equation effectively.
+
+## CNN Model
+
+```python
+class CNNModel(nn.Module):
+    def __init__(self, input_channels=1, output_channels=1):
+        super(CNNModel, self).__init__()
+
+        # Expanded number of layers and increased the number of filters
+        self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv1d(64, 128, kernel_size=3, padding=1)  # Added more filters
+        self.conv4 = nn.Conv1d(128, 128, kernel_size=3, padding=1)  # Added another conv layer
+        self.conv5 = nn.Conv1d(128, 256, kernel_size=3, padding=1)  # Increased to 256 filters
+        self.conv6 = nn.Conv1d(256, 512, kernel_size=3, padding=1)  # Another layer with 512 filters
+
+        self.conv7 = nn.Conv1d(512, output_channels, kernel_size=3, padding=1)  # Output layer
+
+        # Adaptive average pooling to adjust the output size to 1001
+        self.pool = nn.AdaptiveAvgPool1d(1001)
+
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        # Ensure x is 3D: [batch_size, channels, sequence_length]
+        if len(x.shape) == 4:  # Check for extra dimension
+            x = x.squeeze(-1)  # Remove the extra dimension
+
+        # Forward pass through the convolutional layers
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.relu(self.conv3(x))
+        x = self.relu(self.conv4(x))
+        x = self.relu(self.conv5(x))
+        x = self.relu(self.conv6(x))
+        x = self.conv7(x)  # Final convolution layer
+
+        x = self.pool(x)  # Resize to 1001 length if necessary
+
+        return x
+```
+
+## Training the CNN Model
+
+```python
+train_mse_history = []
+train_mae_history = []
+train_rmse_history = []
+train_relative_l2_history = []
+
+test_mse_history = []
+test_mae_history = []
+test_rmse_history = []
+test_relative_l2_history = []  
+test_r2_history = []
+```
+
+```python
+import torch.optim as optim
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+cnn_model = CNNModel(input_channels=2, output_channels=1).to(device)
+
+# Define optimizer and scheduler
+optimizer = optim.Adam(cnn_model.parameters(), lr=learning_rate, weight_decay=1e-5)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+# Loss functions
+mse_loss_fn = nn.MSELoss()
+mae_loss_fn = nn.L1Loss()
+
+# Training Loop
+for epoch in range(epochs):
+    cnn_model.train()
+    train_mse, train_mae, train_rmse, train_relative_l2 = 0.0, 0.0, 0.0, 0.0
+
+    for step, (input_batch, output_batch) in enumerate(training_set):
+        optimizer.zero_grad()
+
+        input_batch = input_batch.view(input_batch.shape[0], 2, -1)  # Ensure correct shape
+        output_pred_batch = cnn_model(input_batch).squeeze(1)
+
+        # Compute loss values
+        loss_mse = mse_loss_fn(output_pred_batch, output_batch)
+        loss_mse.backward()
+        optimizer.step()
+
+        loss_mae = mae_loss_fn(output_pred_batch, output_batch)
+        loss_rmse = torch.sqrt(loss_mse)
+
+        # Calculate Relative L2 Error
+        relative_l2 = torch.norm(output_pred_batch - output_batch) / torch.norm(output_batch)
+
+        train_mse += loss_mse.item()
+        train_mae += loss_mae.item()
+        train_rmse += loss_rmse.item()
+        train_relative_l2 += relative_l2.item()
+
+    # Average out the metrics
+    train_mse /= len(training_set)
+    train_mae /= len(training_set)
+    train_rmse /= len(training_set)
+    train_relative_l2 /= len(training_set)
+
+    train_mse_history.append(train_mse)
+    train_mae_history.append(train_mae)
+    train_rmse_history.append(train_rmse)
+    train_relative_l2_history.append(train_relative_l2)
+
+    scheduler.step()
+
+    # Evaluation
+    cnn_model.eval()
+    test_mse, test_mae, test_rmse, test_r2, test_relative_l2 = 0.0, 0.0, 0.0, 0.0, 0.0
+
+    with torch.no_grad():
+        for step, (input_batch, output_batch) in enumerate(testing_set):
+            input_batch = input_batch.view(input_batch.shape[0], 2, -1)  # Ensure correct shape
+            output_pred_batch = cnn_model(input_batch).squeeze(1)
+
+            mse = mse_loss_fn(output_pred_batch, output_batch)
+            mae = mae_loss_fn(output_pred_batch, output_batch)
+            rmse = torch.sqrt(mse)
+
+            # Calculate Relative L2 Error
+            relative_l2 = torch.norm(output_pred_batch - output_batch) / torch.norm(output_batch)
+
+            ss_total = torch.sum((output_batch - torch.mean(output_batch)) ** 2)
+            ss_residual = torch.sum((output_batch - output_pred_batch) ** 2)
+            r2_score = 1 - (ss_residual / ss_total)
+
+            test_mse += mse.item()
+            test_mae += mae.item()
+            test_rmse += rmse.item()
+            test_relative_l2 += relative_l2.item()
+            test_r2 += r2_score.item()
+
+        # Average out the metrics
+        test_mse /= len(testing_set)
+        test_mae /= len(testing_set)
+        test_rmse /= len(testing_set)
+        test_relative_l2 /= len(testing_set)
+        test_r2 /= len(testing_set)
+
+        test_mse_history.append(test_mse)
+        test_mae_history.append(test_mae)
+        test_rmse_history.append(test_rmse)
+        test_relative_l2_history.append(test_relative_l2)
+        test_r2_history.append(test_r2)
+
+   # Print training and test metrics in a table format
+        if epoch % freq_print == 0:
+          print(f"\nEpoch: {epoch}")
+          print(f"{'Metric':<20}{'Train':<20}{'Test'}")
+          print("-" * 60)
+          print(f"{'MSE':<20}{train_mse:<20f}{test_mse:.6f}")
+          print(f"{'MAE':<20}{train_mae:<20f}{test_mae:.6f}")
+          print(f"{'RMSE':<20}{train_rmse:<20f}{test_rmse:.6f}")
+          print(f"{'R²':<20}{'-':<20}{test_r2:.6f}")  # R² is only for the test set
+          print(f"{'Relative L2 (%)':<20}{'-':<20}{test_relative_l2:.6f}%")  # Only for test
+```
+
+Last Iterated Outputs:
 
 ```
+.
+.
+.
+Epoch: 28
+Metric              Train               Test
+------------------------------------------------------------
+MSE                 0.517000            0.606153
+MAE                 0.606281            0.644920
+RMSE                0.718095            0.776237
+R²                  -                   0.115099
+Relative L2 (%)     -                   0.937226%
+
+Epoch: 29
+Metric              Train               Test
+------------------------------------------------------------
+MSE                 0.501254            0.584649
+MAE                 0.597721            0.657924
+RMSE                0.707504            0.762959
+R²                  -                   0.146385
+Relative L2 (%)     -                   0.921221%
 ```
 
+```python
+model_summary(cnn_model)
+```
 
-
-
+```
++--------------+------------+
+|   Modules    | Parameters |
++--------------+------------+
+| conv1.weight |    192     |
+|  conv1.bias  |     32     |
+| conv2.weight |    6144    |
+|  conv2.bias  |     64     |
+| conv3.weight |   24576    |
+|  conv3.bias  |    128     |
+| conv4.weight |   49152    |
+|  conv4.bias  |    128     |
+| conv5.weight |   98304    |
+|  conv5.bias  |    256     |
+| conv6.weight |   393216   |
+|  conv6.bias  |    512     |
+| conv7.weight |    1536    |
+|  conv7.bias  |     1      |
++--------------+------------+
+Total Trainable Params: 574241
+574241
+```
 
 
 
