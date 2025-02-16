@@ -1,3 +1,16 @@
+
+<div align="center">
+  <img src="./models_viz/figs/FNO_Model.png" alt="FNO_Model.png">
+</div>
+
+<div align="center">
+  <img src="./models_viz/figs/new_FNO.png" alt="new_FNO.png">
+</div>
+
+<div align="center">
+  <img src="./models_viz/figs/cnn_model.png" alt="cnn_model.png">
+</div>
+
 # Fourier Neural Operators (FNOs) for Learning the 1D Allen Cahn Equation
 
 Partial Differential Equations (PDEs) are mathematical equations that involve multiple independent variables, their partial derivatives, and an unknown function. They describe how a quantity changes with respect to several variables and are fundamental in modeling various physical, engineering, and natural phenomena, such as heat conduction, wave propagation, fluid dynamics, electromagnetism, and quantum mechanics.
