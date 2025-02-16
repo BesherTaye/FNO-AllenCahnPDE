@@ -69,20 +69,19 @@ class SpectralConv1d(nn.Module):
         and then applies the inverse FFT to bring the data back to the spatial domain.
         """
 
-        # Number of input and output channels
+        # Input and output channels
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-        # Number of Fourier modes to keep (frequency truncation)
+        # Fourier modes
         self.modes1 = modes1
 
-        # Scaling factor to normalize weight initialization
+        # Scaling factor
         self.scale = (1 / (in_channels * out_channels))
 
         # Learnable weight parameters (complex numbers) for the Fourier modes
         self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, dtype=torch.cfloat))
 
-    # Define a function for complex multiplication in the Fourier domain
     def compl_mul1d(self, input, weights):
         """
         Performs complex multiplication between input Fourier coefficients and learnable weights.
@@ -167,10 +166,10 @@ output_function_test = y_data[n_train:, :]
 
 batch_size = 10
 
-# Create a DataLoader for training data
+#DataLoader for training data
 training_set = DataLoader(TensorDataset(input_function_train, output_function_train), batch_size=batch_size, shuffle=True)
 
-# Create a DataLoader for testing data
+# DataLoader for testing data
 testing_set = DataLoader(TensorDataset(input_function_test, output_function_test), batch_size=batch_size, shuffle=False)
 ```
 ```python
@@ -179,10 +178,10 @@ input_data = x_data
 output_data = y_data
 
 # Print dataset shapes
-print(f"Input Data Shape: {input_data.shape}")  # Example: (num_samples, time_steps, features)
-print(f"Output Data Shape: {output_data.shape}")  # Example: (num_samples, time_steps)
+print(f"Input Data Shape: {input_data.shape}")  
+print(f"Output Data Shape: {output_data.shape}") 
 
-# Check if there are time steps
+# Check for time steps
 num_samples = input_data.shape[0]
 time_steps = input_data.shape[1] if len(input_data.shape) > 1 else 1
 num_features = input_data.shape[2] if len(input_data.shape) > 2 else 1
@@ -191,7 +190,7 @@ print(f"Number of Samples: {num_samples}")
 print(f"Time Steps: {time_steps}")
 print(f"Number of Features in Input: {num_features}")
 
-# Visualize a few sample inputs and outputs
+# Visualize sample inputs and outputs
 sample_idx = np.random.randint(0, num_samples)  # Select a random sample
 
 plt.figure(figsize=(12, 5))
@@ -253,13 +252,12 @@ class FNO1d(nn.Module):
         Output: (batch_size, x=s, c=1) -> solution at a later time step
         """
 
-        # Number of Fourier modes to keep (controls how much frequency information is retained)
+        # Number of Fourier modes 
         self.modes1 = modes
 
-        # Number of channels (width of the network)
+        # Number of channels
         self.width = width
 
-        # Padding: Used to extend the domain if the input is not periodic
         self.padding = 1
 
         # Initial linear layer to lift the input dimension
@@ -272,23 +270,20 @@ class FNO1d(nn.Module):
         self.spect3 = SpectralConv1d(self.width, self.width, self.modes1)
 
         # Define 1x1 convolution layers to refine local features after each Fourier layer
-        self.lin0 = nn.Conv1d(self.width, self.width, 1)  # First linear transformation
-        self.lin1 = nn.Conv1d(self.width, self.width, 1)  # Second linear transformation
-        self.lin2 = nn.Conv1d(self.width, self.width, 1)  # Third linear transformation
+        self.lin0 = nn.Conv1d(self.width, self.width, 1) 
+        self.lin1 = nn.Conv1d(self.width, self.width, 1) 
+        self.lin2 = nn.Conv1d(self.width, self.width, 1) 
 
         # Final linear layers to project to the output dimension
-        self.linear_q = nn.Linear(self.width, 32)   # Reduce width to 32
-        self.output_layer = nn.Linear(32, 1)        # Reduce final output to 1 channel
+        self.linear_q = nn.Linear(self.width, 32)   
+        self.output_layer = nn.Linear(32, 1)        
 
-        # Activation function (Tanh) for non-linearity
+        # Activation function (Tanh) 
         self.activation = torch.nn.Tanh()
 
-    # Function to apply a Fourier convolution + pointwise linear transformation
     def fourier_layer(self, x, spectral_layer, conv_layer):
-        # Apply the spectral convolution and add the corresponding Conv1D layer
         return self.activation(spectral_layer(x) + conv_layer(x))
 
-    # Function to apply a linear transformation followed by activation
     def linear_layer(self, x, linear_transformation):
         return self.activation(linear_transformation(x))
 
@@ -300,13 +295,13 @@ class FNO1d(nn.Module):
         3. Project the output to the final shape.
         """
 
-        # Step 1: Lift input dimensions using the linear layer
+        # Step 1
         x = self.linear_p(x)
 
         # Permute dimensions to match (batch, channels, grid_points) for Conv1D
         x = x.permute(0, 2, 1)  # Shape: (batch_size, width, grid_points)
 
-        # Step 2: Apply three Fourier convolution layers with linear corrections
+        # Step 2
         x = self.fourier_layer(x, self.spect1, self.lin0)
         x = self.fourier_layer(x, self.spect2, self.lin1)
         x = self.fourier_layer(x, self.spect3, self.lin2)
@@ -314,7 +309,7 @@ class FNO1d(nn.Module):
         # Permute back to (batch, grid_points, width) for the final linear layers
         x = x.permute(0, 2, 1)
 
-        # Step 3: Apply final linear transformations
+        # Step 3
         x = self.linear_layer(x, self.linear_q)  # Reduce dimension to 32
         x = self.output_layer(x)  # Final projection to 1D output
 
@@ -350,17 +345,14 @@ fno = FNO1d(modes, width)
 ```
 
 ```python
-# Set the optimizer as Adam, which is commonly used in deep learning
 optimizer = Adam(fno.parameters(), lr=learning_rate, weight_decay=1e-5)
 
-# Set the learning rate scheduler
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
 # Loss function
 mse_loss_fn = torch.nn.MSELoss()
-mae_loss_fn = torch.nn.L1Loss()  # Mean Absolute Error (MAE)
+mae_loss_fn = torch.nn.L1Loss()
 
-# Lists to store train/test loss over epochs
 train_mse_history = []
 train_mae_history = []
 train_rmse_history = []
@@ -371,13 +363,12 @@ test_r2_history = []
 test_rmse_history = []
 test_relative_l2_history = []
 
-# Define how often to print the progress
 freq_print = 1
 
 # Training Loop
 for epoch in range(epochs):
-    fno.train()  # Set model to training mode
-    train_mse, train_mae, train_rmse = 0.0, 0.0, 0.0  # Initialize training metrics
+    fno.train()  
+    train_mse, train_mae, train_rmse = 0.0, 0.0, 0.0 
 
     # Loop over batches in the training set
     for step, (input_batch, output_batch) in enumerate(training_set):
@@ -386,22 +377,19 @@ for epoch in range(epochs):
         # Get predictions
         output_pred_batch = fno(input_batch).squeeze(2)
 
-        # Compute loss (MSE)
         loss_mse = mse_loss_fn(output_pred_batch, output_batch)
         loss_mse.backward()  # Backpropagation
 
         optimizer.step()  # Update model parameters
 
         # Compute additional training metrics
-        loss_mae = mae_loss_fn(output_pred_batch, output_batch)  # Mean Absolute Error
-        loss_rmse = torch.sqrt(loss_mse)  # Root Mean Squared Error
+        loss_mae = mae_loss_fn(output_pred_batch, output_batch) 
+        loss_rmse = torch.sqrt(loss_mse)
 
-        # Accumulate losses
         train_mse += loss_mse.item()
         train_mae += loss_mae.item()
         train_rmse += loss_rmse.item()
 
-    # Compute the average training loss over all batches
     train_mse /= len(training_set)
     train_mae /= len(training_set)
     train_rmse /= len(training_set)
@@ -415,22 +403,19 @@ for epoch in range(epochs):
     scheduler.step()
 
     # Evaluation on the test set
-    fno.eval()  # Set model to evaluation mode
+    fno.eval() 
     test_mse, test_mae, test_rmse, test_r2, test_relative_l2 = 0.0, 0.0, 0.0, 0.0, 0.0
 
     with torch.no_grad():
         for step, (input_batch, output_batch) in enumerate(testing_set):
             output_pred_batch = fno(input_batch).squeeze(2)
 
-            # Compute test losses
             mse = mse_loss_fn(output_pred_batch, output_batch)
             mae = mae_loss_fn(output_pred_batch, output_batch)
             rmse = torch.sqrt(mse)
 
-            # Relative L2 Error
             relative_l2 = (torch.mean((output_pred_batch - output_batch) ** 2) / torch.mean(output_batch ** 2)) ** 0.5 * 100
 
-            # Compute R² Score (Coefficient of Determination)
             ss_total = torch.sum((output_batch - torch.mean(output_batch)) ** 2)
             ss_residual = torch.sum((output_batch - output_pred_batch) ** 2)
             r2_score = 1 - (ss_residual / ss_total)
@@ -442,7 +427,6 @@ for epoch in range(epochs):
             test_relative_l2 += relative_l2.item()
             test_r2 += r2_score.item()
 
-        # Compute average test losses
         test_mse /= len(testing_set)
         test_mae /= len(testing_set)
         test_rmse /= len(testing_set)
@@ -621,10 +605,10 @@ class CNNModel(nn.Module):
         # Expanded number of layers and increased the number of filters
         self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv1d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv1d(64, 128, kernel_size=3, padding=1)  # Added more filters
-        self.conv4 = nn.Conv1d(128, 128, kernel_size=3, padding=1)  # Added another conv layer
-        self.conv5 = nn.Conv1d(128, 256, kernel_size=3, padding=1)  # Increased to 256 filters
-        self.conv6 = nn.Conv1d(256, 512, kernel_size=3, padding=1)  # Another layer with 512 filters
+        self.conv3 = nn.Conv1d(64, 128, kernel_size=3, padding=1)  
+        self.conv4 = nn.Conv1d(128, 128, kernel_size=3, padding=1) 
+        self.conv5 = nn.Conv1d(128, 256, kernel_size=3, padding=1) 
+        self.conv6 = nn.Conv1d(256, 512, kernel_size=3, padding=1)  
 
         self.conv7 = nn.Conv1d(512, output_channels, kernel_size=3, padding=1)  # Output layer
 
@@ -638,7 +622,6 @@ class CNNModel(nn.Module):
         if len(x.shape) == 4:  # Check for extra dimension
             x = x.squeeze(-1)  # Remove the extra dimension
 
-        # Forward pass through the convolutional layers
         x = self.relu(self.conv1(x))
         x = self.relu(self.conv2(x))
         x = self.relu(self.conv3(x))
@@ -701,7 +684,6 @@ for epoch in range(epochs):
         loss_mae = mae_loss_fn(output_pred_batch, output_batch)
         loss_rmse = torch.sqrt(loss_mse)
 
-        # Calculate Relative L2 Error
         relative_l2 = torch.norm(output_pred_batch - output_batch) / torch.norm(output_batch)
 
         train_mse += loss_mse.item()
@@ -709,7 +691,6 @@ for epoch in range(epochs):
         train_rmse += loss_rmse.item()
         train_relative_l2 += relative_l2.item()
 
-    # Average out the metrics
     train_mse /= len(training_set)
     train_mae /= len(training_set)
     train_rmse /= len(training_set)
@@ -728,7 +709,7 @@ for epoch in range(epochs):
 
     with torch.no_grad():
         for step, (input_batch, output_batch) in enumerate(testing_set):
-            input_batch = input_batch.view(input_batch.shape[0], 2, -1)  # Ensure correct shape
+            input_batch = input_batch.view(input_batch.shape[0], 2, -1)  
             output_pred_batch = cnn_model(input_batch).squeeze(1)
 
             mse = mse_loss_fn(output_pred_batch, output_batch)
