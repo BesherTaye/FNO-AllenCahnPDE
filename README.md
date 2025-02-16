@@ -133,15 +133,15 @@ The Allen-Cahn equation is a reaction-diffusion partial differential equation (P
 $$u_t = \Delta u - ϵ^2 u (u^2 - 1),\quad u\in\mathbb{R}×\mathbb{R_{>0}}$$
 
 # Data Exploration and Visualization
-```
+```python
 from google.colab import drive
 drive.mount('/content/drive')
 ```
-```
+```python
 torch.manual_seed(0)
 np.random.seed(0)
 ```
-```
+```python
 # Number of training samples to be used
 n_train = 100
 
@@ -173,7 +173,7 @@ training_set = DataLoader(TensorDataset(input_function_train, output_function_tr
 # Create a DataLoader for testing data
 testing_set = DataLoader(TensorDataset(input_function_test, output_function_test), batch_size=batch_size, shuffle=False)
 ```
-```
+```python
 # Load the datasets
 input_data = x_data
 output_data = y_data
@@ -236,8 +236,7 @@ Number of Features in Input: 2
 
 # FNO1d Model
 
-
-``` 
+```python
 # Define the Fourier Neural Operator (FNO) for 1D problems
 class FNO1d(nn.Module):
     def __init__(self, modes, width):
@@ -322,11 +321,231 @@ class FNO1d(nn.Module):
         return x  
 ```
 
+# Training the FNO1d Model
 
+The below script includes:
+- Training with Adam optimizer and StepLR scheduler for learning rate adjustment.
+- Evaluation metrics:
+  - Mean Squared Error (MSE)
+  - Mean Absolute Error (MAE)
+  - Root Mean Squared Error (RMSE)
+  - R² Score (Coefficient of Determination)
+  - Relative L2 Error (%)
+- Training and testing results are displayed in a table format for better interpretability.
 
+```python
+learning_rate = 0.001
+epochs = 30
+step_size = 50
+gamma = 0.5
+```
 
+```python
+modes = 16
+width = 64
+```
+The Model is inintialized.
+```python
+fno = FNO1d(modes, width)
+```
 
+```python
+# Set the optimizer as Adam, which is commonly used in deep learning
+optimizer = Adam(fno.parameters(), lr=learning_rate, weight_decay=1e-5)
 
+# Set the learning rate scheduler
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+# Loss function
+mse_loss_fn = torch.nn.MSELoss()
+mae_loss_fn = torch.nn.L1Loss()  # Mean Absolute Error (MAE)
+
+# Lists to store train/test loss over epochs
+train_mse_history = []
+train_mae_history = []
+train_rmse_history = []
+
+test_mse_history = []
+test_mae_history = []
+test_r2_history = []
+test_rmse_history = []
+test_relative_l2_history = []
+
+# Define how often to print the progress
+freq_print = 1
+
+# Training Loop
+for epoch in range(epochs):
+    fno.train()  # Set model to training mode
+    train_mse, train_mae, train_rmse = 0.0, 0.0, 0.0  # Initialize training metrics
+
+    # Loop over batches in the training set
+    for step, (input_batch, output_batch) in enumerate(training_set):
+        optimizer.zero_grad()  # Reset gradients
+
+        # Get predictions
+        output_pred_batch = fno(input_batch).squeeze(2)
+
+        # Compute loss (MSE)
+        loss_mse = mse_loss_fn(output_pred_batch, output_batch)
+        loss_mse.backward()  # Backpropagation
+
+        optimizer.step()  # Update model parameters
+
+        # Compute additional training metrics
+        loss_mae = mae_loss_fn(output_pred_batch, output_batch)  # Mean Absolute Error
+        loss_rmse = torch.sqrt(loss_mse)  # Root Mean Squared Error
+
+        # Accumulate losses
+        train_mse += loss_mse.item()
+        train_mae += loss_mae.item()
+        train_rmse += loss_rmse.item()
+
+    # Compute the average training loss over all batches
+    train_mse /= len(training_set)
+    train_mae /= len(training_set)
+    train_rmse /= len(training_set)
+
+    # Store training losses
+    train_mse_history.append(train_mse)
+    train_mae_history.append(train_mae)
+    train_rmse_history.append(train_rmse)
+
+    # Update learning rate
+    scheduler.step()
+
+    # Evaluation on the test set
+    fno.eval()  # Set model to evaluation mode
+    test_mse, test_mae, test_rmse, test_r2, test_relative_l2 = 0.0, 0.0, 0.0, 0.0, 0.0
+
+    with torch.no_grad():
+        for step, (input_batch, output_batch) in enumerate(testing_set):
+            output_pred_batch = fno(input_batch).squeeze(2)
+
+            # Compute test losses
+            mse = mse_loss_fn(output_pred_batch, output_batch)
+            mae = mae_loss_fn(output_pred_batch, output_batch)
+            rmse = torch.sqrt(mse)
+
+            # Relative L2 Error
+            relative_l2 = (torch.mean((output_pred_batch - output_batch) ** 2) / torch.mean(output_batch ** 2)) ** 0.5 * 100
+
+            # Compute R² Score (Coefficient of Determination)
+            ss_total = torch.sum((output_batch - torch.mean(output_batch)) ** 2)
+            ss_residual = torch.sum((output_batch - output_pred_batch) ** 2)
+            r2_score = 1 - (ss_residual / ss_total)
+
+            # Accumulate test losses
+            test_mse += mse.item()
+            test_mae += mae.item()
+            test_rmse += rmse.item()
+            test_relative_l2 += relative_l2.item()
+            test_r2 += r2_score.item()
+
+        # Compute average test losses
+        test_mse /= len(testing_set)
+        test_mae /= len(testing_set)
+        test_rmse /= len(testing_set)
+        test_relative_l2 /= len(testing_set)
+        test_r2 /= len(testing_set)
+
+        # Store test losses
+        test_mse_history.append(test_mse)
+        test_mae_history.append(test_mae)
+        test_rmse_history.append(test_rmse)
+        test_relative_l2_history.append(test_relative_l2)
+        test_r2_history.append(test_r2)
+
+    # Print training and test metrics in a table format
+        if epoch % freq_print == 0:
+          print(f"\nEpoch: {epoch}")
+          print(f"{'Metric':<20}{'Train':<20}{'Test'}")
+          print("-" * 60)
+          print(f"{'MSE':<20}{train_mse:<20f}{test_mse:.6f}")
+          print(f"{'MAE':<20}{train_mae:<20f}{test_mae:.6f}")
+          print(f"{'RMSE':<20}{train_rmse:<20f}{test_rmse:.6f}")
+          print(f"{'R²':<20}{'-':<20}{test_r2:.6f}")  # R² is only for the test set
+          print(f"{'Relative L2 (%)':<20}{'-':<20}{test_relative_l2:.6f}%")  # Only for test
+```
+Last Iterated Outputs:
+
+```
+.
+.
+.
+Epoch: 28
+Metric              Train               Test
+------------------------------------------------------------
+MSE                 0.000729            0.002130
+MAE                 0.014293            0.019510
+RMSE                0.025856            0.042593
+R²                  -                   0.996894
+Relative L2 (%)     -                   5.143578%
+
+Epoch: 29
+Metric              Train               Test
+------------------------------------------------------------
+MSE                 0.000624            0.002351
+MAE                 0.013763            0.019859
+RMSE                0.024232            0.043836
+R²                  -                   0.996572
+Relative L2 (%)     -                   5.293022%
+```
+
+To further understand the model architecture, the model is summarized using the function below:
+```python
+def model_summary(model):
+    table = PrettyTable(["Modules", "Parameters"])
+    total_params = 0
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad: continue
+        params = parameter.numel()
+        table.add_row([name, params])
+        total_params+=params
+    print(table)
+    print(f"Total Trainable Params: {total_params}")
+    return total_params
+    total_params+=params
+    print(table)
+    print(f'Total Trainable Params: {total_params}')
+    return total_params
+```
+
+```python
+model_summary(fno)
+```
+
+```
++---------------------+------------+
+|       Modules       | Parameters |
++---------------------+------------+
+|   linear_p.weight   |    128     |
+|    linear_p.bias    |     64     |
+|   spect1.weights1   |   65536    |
+|   spect2.weights1   |   65536    |
+|   spect3.weights1   |   65536    |
+|     lin0.weight     |    4096    |
+|      lin0.bias      |     64     |
+|     lin1.weight     |    4096    |
+|      lin1.bias      |     64     |
+|     lin2.weight     |    4096    |
+|      lin2.bias      |     64     |
+|   linear_q.weight   |    2048    |
+|    linear_q.bias    |     32     |
+| output_layer.weight |     32     |
+|  output_layer.bias  |     1      |
++---------------------+------------+
+Total Trainable Params: 211393
+211393
+```
+
+# Testing Model Results
+
+In the following section, we explore the visual results of the Fourier Neural Operator (FNO) model on the test dataset. The predicted outputs are compared with the ground truth, providing insights into the model's ability to learn and generalize patterns in 1D regression tasks.  
+
+These visualizations highlight the model's performance by showcasing the predicted and actual values, helping assess accuracy and error distribution across different test samples.  
+
+The following plots display the model's predictions:
 
 
 
