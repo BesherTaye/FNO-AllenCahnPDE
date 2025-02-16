@@ -82,7 +82,7 @@ Since the inputs and outputs of partial differential equations (PDEs) are contin
 In the spatial domain, convolution corresponds to pointwise multiplication in the Fourier domain. To apply the (global) convolution operator, we first perform a Fourier transform, followed by a linear transformation, and then an inverse Fourier transform.
 
 <div align="center">
-  <img src="./fourier_layer.png" alt="Fourier Layers">
+  <img src="./figures/fourier_layer.png" alt="Fourier Layers">
 </div>
 
 The Fourier layer just consists of three steps:
@@ -267,7 +267,7 @@ Time Steps: 1001
 Number of Features in Input: 2
 ```
 <div align="center">
-  <img src="./sample_629.png" alt="Sample 629">
+  <img src="./figures/sample_629.png" alt="Sample 629">
 </div>
 
 
@@ -571,7 +571,7 @@ These visualizations highlight the model's performance by showcasing the predict
 The following plots display the model's predictions:
 
 <div align="center">
-  <img src="./true_vs_approx.png" alt="FNO1d Predictions">
+  <img src="./figures/true_vs_approx.png" alt="FNO1d Predictions">
 </div>
 
 
@@ -621,7 +621,7 @@ Total Trainable Params: 350785
 FNO2_1d Model Predictions:
 
 <div align="center">
-  <img src="./true_vs_approx_fno2.png" alt="FNO2d Predictions">
+  <img src="./figures/true_vs_approx_fno2.png" alt="FNO2d Predictions">
 </div>
 
 As we can see, increasing the number of **Fourier layers** did not significantly improve the model's predictive ability. While the additional layers slightly influenced the results, the overall effect on accuracy and generalization was minimal. This suggests that simply increasing the depth of the Fourier layers may not always lead to better performance and that other factors, such as data quality, regularization, or alternative architectural modifications, might play a more crucial role in enhancing the model’s predictions.
@@ -847,7 +847,7 @@ Total Trainable Params: 574241
 CNN Model Predictions:
 
 <div align="center">
-  <img src="./true_vs_approx_cnn.png" alt="CNN Predictions">
+  <img src="./figures/true_vs_approx_cnn.png" alt="CNN Predictions">
 </div>
 
 
@@ -860,7 +860,7 @@ In this section, we compare the performance of Fourier Neural Operators (FNO) an
 The Testing Loss Curve compares the performance of the FNO, FNO_2, and CNN models over 30 epochs.
 
 <div align="center">
-  <img src="./testing_loss_curve_comparison.png" alt="CNN Predictions">
+  <img src="./figures/testing_loss_curve_comparison.png" alt="CNN Predictions">
 </div>
 
 
