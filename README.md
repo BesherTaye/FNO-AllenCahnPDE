@@ -2,6 +2,31 @@
 
 Partial Differential Equations (PDEs) are mathematical equations that involve multiple independent variables, their partial derivatives, and an unknown function. They describe how a quantity changes with respect to several variables and are fundamental in modeling various physical, engineering, and natural phenomena, such as heat conduction, wave propagation, fluid dynamics, electromagnetism, and quantum mechanics.
 
+
+## Table of Contents
+
+- [Fourier-Neural-Operator](#fourier-neural-operator)
+- [Operator Learning](#operator-learning)
+- [Import Libraries](#import-libraries)
+- [Fourier Layer](#fourier-layer)
+- [Allen-Cahn Equation](#allen---cahn-equation)
+- [Data Exploration and Visualization](#data-exploration-and-visualization)
+- [FNO1d Model](#fno1d-model)
+- [Training the FNO1d Model](#training-the-fno1d-model)
+- [Testing FNO1d Model Results](#testing-fno1d-model-results)
+- [Fourier Layers](#fourier-layers)
+- [FNO2_1d Model](#fno2_1d-model)
+- [Training the FNO2_1d Model](#training-the-fno2_1d-model)
+- [Testing FNO2_1d Model Results](#testing-fno2_1d-model-results)
+- [Convolutional Neural Networks (CNN)](#convolutional-neural-networks-cnn)
+  - [CNN Model](#cnn-model)
+  - [Training the CNN Model](#training-the-cnn-model)
+  - [Testing CNN Model Results](#testing-cnn-model-results)
+- [FNO vs CNN](#fno-vs-cnn)
+  - [Comparing Metrics](#comparing-metrics)
+
+
+
 ## Fourier-Neural-Operator
 Fourier Neural Operators (FNOs) are a deep learning approach for solving PDEs efficiently by learning function-to-function mappings. Unlike traditional numerical solvers, FNOs operate in the Fourier domain, making them significantly faster and more scalable for high-dimensional PDEs.
 
