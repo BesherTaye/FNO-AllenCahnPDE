@@ -133,6 +133,7 @@ $$
 \mathcal{L}_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2
 $$
 
+
 where:
 - $N$ is the number of samples,
 - $y_i$ is the true value (ground truth) for sample $i$,
