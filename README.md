@@ -1,4 +1,3 @@
-
 <div align="center">
   <img src="./models_viz/figs/FNO_Model.png" alt="FNO_Model.png">
 </div>
@@ -13,7 +12,13 @@
 
 # Fourier Neural Operators (FNOs) for Learning the 1D Allen Cahn Equation
 
-Partial Differential Equations (PDEs) are mathematical equations that involve multiple independent variables, their partial derivatives, and an unknown function. They describe how a quantity changes with respect to several variables and are fundamental in modeling various physical, engineering, and natural phenomena, such as heat conduction, wave propagation, fluid dynamics, electromagnetism, and quantum mechanics.
+In this project, we focus on learning the **1D Allen–Cahn equation** using a **Fourier neural operator (FNO) model**. The Allen–Cahn equation is a reaction-diffusion PDE that describes phase separation in multi-phase systems:
+
+$$
+u_t = \Delta u - ϵ^2 u (u^2 - 1),\quad u\in\mathbb{R}×\mathbb{R_{>0}}
+$$
+
+We demonstrate that the FNO outperforms conventional deep learning approaches, specifically a CNN-based model, in terms of accuracy and generalization. By leveraging FNO’s ability to learn mappings in function space, we achieve superior resolution-invariance and improved performance over mesh-dependent deep learning methods.
 
 
 ## Table of Contents
@@ -40,16 +45,25 @@ Partial Differential Equations (PDEs) are mathematical equations that involve mu
 
 
 
-## Fourier-Neural-Operator
-Fourier Neural Operators (FNOs) are a deep learning approach for solving PDEs efficiently by learning function-to-function mappings. Unlike traditional numerical solvers, FNOs operate in the Fourier domain, making them significantly faster and more scalable for high-dimensional PDEs.
 
-Traditional methods for solving PDEs, such as Finite Difference Methods (FDM), Finite Element Methods (FEM), and Spectral Methods, can be computationally expensive and struggle with high-dimensional or complex boundary conditions. Deep learning (DL) offers an alternative that can handle these challenges efficiently.
+## Neural Operators for Solving PDEs
 
-Fourier Neural Operators (FNOs) outperform CNNs and PINNs in learning PDEs by capturing global dependencies through Fourier transforms, enabling faster convergence and superior scalability. Unlike CNNs, which struggle with long-range interactions, and PINNs, which require complex loss tuning, FNOs learn direct mappings between function spaces, making them highly efficient for high-dimensional problems. Their ability to generalize across varying conditions without retraining makes them ideal for real-time applications like fluid dynamics and climate modeling.
+Many scientific and engineering problems require solving systems of partial differential equations (PDEs). However, traditional PDE solvers, such as finite element methods (FEM) and finite difference methods (FDM), rely on discretizing the computational domain into a fine mesh, which can be computationally expensive and inefficient.
 
-## Operator Learning
-Operator learning is a machine learning approach used to learn mappings between functions rather than just input-output pairs. It generalizes neural networks to work with infinite-dimensional spaces, such as solutions to differential equations. 
-It learns a transformation $G$ that maps one function to another:
+**Neural operators** offer an alternative approach by leveraging neural networks to learn solution operators for PDEs. Instead of solving PDEs iteratively on a mesh, neural operators take initial or boundary conditions as input and directly produce the solution, akin to an image-to-image transformation.
+
+Unlike standard methods, neural operators are mesh-independent. They can be trained on one discretization and evaluated on another, as they operate in function space rather than learning discrete vectors.
+
+| **Conventional PDE Solvers** | **Neural Operators** |
+|-----------------------------|----------------------|
+| Solve a single instance at a time | Learn a family of PDEs |
+| Require explicit equation formulation | Black-box, data-driven approach |
+| Speed-accuracy trade-off based on resolution | Resolution- and mesh-invariant |
+| Computationally expensive on fine grids, faster on coarse grids | Slow to train but fast to evaluate |
+
+**Fourier Neural Operators (FNOs)** are a deep learning approach for solving PDEs efficiently by learning function-to-function mappings. Unlike traditional numerical solvers, FNOs operate in the Fourier domain, making them significantly faster and more scalable for high-dimensional PDEs.
+
+Fourier Neural Operators (FNOs) rely on **operator learning**, where we attempt to learn mappings between functions rather than just input-output pairs. It generalizes neural networks to work with infinite-dimensional spaces, such as solutions to differential equations. Particularly, it learns a transformation $G$ that maps one function to another:
 
 $$G: u(x) \to v(x)$$  
 
@@ -59,8 +73,13 @@ where $u(x)$ is the input function and $v(x)$ is the output function.
   <img src="./FNO 1.png" alt="Sample of a PDE">
 </div>
 
+PDE solutions function as operators that map between function spaces, taking inputs like initial conditions, boundary conditions, and source terms to produce the corresponding solution. 
 
-PDE solutions function as operators that map between function spaces, taking inputs like initial conditions, boundary conditions, and source terms to produce the corresponding solution. Neural Operators are a class of data-driven models designed to be capable of handling and generalizing across different representations, including varying mesh refinements.
+
+
+
+
+
 
 # Import Libraries
 ```python
