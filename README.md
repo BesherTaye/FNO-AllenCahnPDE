@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="./models_viz/figs/FNO_Model.png" alt="FNO_Model.png">
-</div>
+
 
 <div align="center">
   <img src="./models_viz/figs/new_FNO.png" alt="new_FNO.png">
@@ -61,6 +59,9 @@ Unlike standard methods, neural operators are mesh-independent. They can be trai
 | Speed-accuracy trade-off based on resolution | Resolution- and mesh-invariant |
 | Computationally expensive on fine grids, faster on coarse grids | Slow to train but fast to evaluate |
 
+
+## Fourier Neural Operators (FNOs)
+
 **Fourier Neural Operators (FNOs)** are a deep learning approach for solving PDEs efficiently by learning function-to-function mappings. Unlike traditional numerical solvers, FNOs operate in the Fourier domain, making them significantly faster and more scalable for high-dimensional PDEs.
 
 Fourier Neural Operators (FNOs) rely on **operator learning**, where we attempt to learn mappings between functions rather than just input-output pairs. It generalizes neural networks to work with infinite-dimensional spaces, such as solutions to differential equations. Particularly, it learns a transformation $G$ that maps one function to another:
@@ -70,14 +71,12 @@ $$G: u(x) \to v(x)$$
 where $u(x)$ is the input function and $v(x)$ is the output function.
 
 <div align="center">
-  <img src="./FNO 1.png" alt="Sample of a PDE">
+  <img src="./figures/FNO_1.png" alt="Sample of a PDE">
 </div>
 
 PDE solutions function as operators that map between function spaces, taking inputs like initial conditions, boundary conditions, and source terms to produce the corresponding solution. 
 
-
-
-## Fourier Layer
+### Fourier Layer
 Since the inputs and outputs of partial differential equations (PDEs) are continuous functions, representing them in Fourier space is often more efficient.
 
 In the spatial domain, convolution corresponds to pointwise multiplication in the Fourier domain. To apply the (global) convolution operator, we first perform a Fourier transform, followed by a linear transformation, and then an inverse Fourier transform.
@@ -100,218 +99,40 @@ We incorporate a Fourier Layer in our implementation `SpectralConv1d`designed to
 
 
 
-# Import Libraries
+
+## Data Exploration and Visualization
+
+Our data consists of the initial conditions and mapped solutions. It has the following dimensions:
+
 ```python
-import torch
-import torch.nn as nn
-import os
-import numpy as np
-from torch.utils.data import DataLoader, TensorDataset
-import torch.nn.functional as F
-from torch.optim import Adam
-import matplotlib.pyplot as plt
-from prettytable import PrettyTable
-import pandas as pd
-```
-
-
-
-# Data Exploration and Visualization
-```python
-from google.colab import drive
-drive.mount('/content/drive')
-```
-```python
-torch.manual_seed(0)
-np.random.seed(0)
-```
-```python
-# Number of training samples to be used
-n_train = 100
-
-# Load the input data from a NumPy file and convert it to a PyTorch tensor
-# This file contains the initial conditions and spatial coordinates
-x_data = torch.from_numpy(np.load("/content/drive/MyDrive/1D_Allen-Cahn/AC_data_input.npy")).type(torch.float32)
-
-# Load the output data from a NumPy file and convert it to a PyTorch tensor
-# This file contains the solution of the equation at a later timestep
-y_data = torch.from_numpy(np.load("/content/drive/MyDrive/1D_Allen-Cahn/AC_data_output.npy")).type(torch.float32)
-
-# Swap the first and second channels in the input tensor
-temporary_tensor = torch.clone(x_data[:, :, 0])
-x_data[:, :, 0] = x_data[:, :, 1]
-x_data[:, :, 1] = temporary_tensor
-
-# Split the dataset into training and testing sets
-input_function_train = x_data[:n_train, :]
-output_function_train = y_data[:n_train, :]
-
-input_function_test = x_data[n_train:, :]
-output_function_test = y_data[n_train:, :]
-
-batch_size = 10
-
-#DataLoader for training data
-training_set = DataLoader(TensorDataset(input_function_train, output_function_train), batch_size=batch_size, shuffle=True)
-
-# DataLoader for testing data
-testing_set = DataLoader(TensorDataset(input_function_test, output_function_test), batch_size=batch_size, shuffle=False)
-```
-```python
-# Load the datasets
-input_data = x_data
-output_data = y_data
-
-# Print dataset shapes
-print(f"Input Data Shape: {input_data.shape}")  
-print(f"Output Data Shape: {output_data.shape}") 
-
-# Check for time steps
-num_samples = input_data.shape[0]
-time_steps = input_data.shape[1] if len(input_data.shape) > 1 else 1
-num_features = input_data.shape[2] if len(input_data.shape) > 2 else 1
-
-print(f"Number of Samples: {num_samples}")
-print(f"Time Steps: {time_steps}")
-print(f"Number of Features in Input: {num_features}")
-
-# Visualize sample inputs and outputs
-sample_idx = np.random.randint(0, num_samples)  # Select a random sample
-
-plt.figure(figsize=(12, 5))
-
-# Plot Input Data
-plt.subplot(1, 2, 1)
-for feature in range(num_features):
-    if feature == 1:  # Skip Feature 2 (index 1)
-        continue
-    plt.plot(range(time_steps), input_data[sample_idx, :, feature], label=f'Feature {feature+1}')
-plt.title(f'Input Data Sample {sample_idx}')
-plt.xlabel('Time Steps')
-plt.ylabel('Feature Values')
-plt.legend()
-plt.grid(True, linestyle=':')
-
-
-# Plot Output Data
-plt.subplot(1, 2, 2)
-plt.plot(range(time_steps), output_data[sample_idx, :], label='Output Data', color='r')
-plt.title(f'Output Data Sample {sample_idx}')
-plt.xlabel('Time Steps')
-plt.ylabel('Output Values')
-plt.legend()
-plt.grid(True, linestyle=':')
-
-plt.tight_layout()
-plt.show()
-```
-Sample Output:
-```
 Input Data Shape: torch.Size([1000, 1001, 2])
 Output Data Shape: torch.Size([1000, 1001])
 Number of Samples: 1000
 Time Steps: 1001
 Number of Features in Input: 2
 ```
+
 <div align="center">
   <img src="./figures/sample_629.png" alt="Sample 629">
 </div>
 
 
-# FNO1d Model
+## Deep Learning Models
 
-```python
-# Define the Fourier Neural Operator (FNO) for 1D problems
-class FNO1d(nn.Module):
-    def __init__(self, modes, width):
-        super(FNO1d, self).__init__()
+### 1. FNO1d Model
 
-        """
-        The overall structure of the Fourier Neural Operator (FNO):
-        1. Lift the input to a higher-dimensional space using `self.linear_p`.
-        2. Apply multiple layers of Fourier-based convolution (`SpectralConv1d`).
-        3. Apply linear transformations (`Conv1d`) after each Fourier layer.
-        4. Project the output to the desired final dimension (`self.linear_q` and `self.output_layer`).
-
-        Input:  (batch_size, x=s, c=2) -> initial condition and spatial coordinate (u0(x), x)
-        Output: (batch_size, x=s, c=1) -> solution at a later time step
-        """
-
-        # Number of Fourier modes 
-        self.modes1 = modes
-
-        # Number of channels
-        self.width = width
-
-        self.padding = 1
-
-        # Initial linear layer to lift the input dimension
-        self.linear_p = nn.Linear(2, self.width)
-
-        # Define 3 Fourier convolution layers (SpectralConv1d)
-        # Each layer performs spectral convolution to capture global dependencies
-        self.spect1 = SpectralConv1d(self.width, self.width, self.modes1)
-        self.spect2 = SpectralConv1d(self.width, self.width, self.modes1)
-        self.spect3 = SpectralConv1d(self.width, self.width, self.modes1)
-
-        # Define 1x1 convolution layers to refine local features after each Fourier layer
-        self.lin0 = nn.Conv1d(self.width, self.width, 1) 
-        self.lin1 = nn.Conv1d(self.width, self.width, 1) 
-        self.lin2 = nn.Conv1d(self.width, self.width, 1) 
-
-        # Final linear layers to project to the output dimension
-        self.linear_q = nn.Linear(self.width, 32)   
-        self.output_layer = nn.Linear(32, 1)        
-
-        # Activation function (Tanh) 
-        self.activation = torch.nn.Tanh()
-
-    def fourier_layer(self, x, spectral_layer, conv_layer):
-        return self.activation(spectral_layer(x) + conv_layer(x))
-
-    def linear_layer(self, x, linear_transformation):
-        return self.activation(linear_transformation(x))
-
-    def forward(self, x):
-        """
-        Steps:
-        1. Lift the input to a higher-dimensional space.
-        2. Apply spectral convolution layers followed by linear transformations.
-        3. Project the output to the final shape.
-        """
-
-        # Step 1
-        x = self.linear_p(x)
-
-        # Permute dimensions to match (batch, channels, grid_points) for Conv1D
-        x = x.permute(0, 2, 1)  # Shape: (batch_size, width, grid_points)
-
-        # Step 2
-        x = self.fourier_layer(x, self.spect1, self.lin0)
-        x = self.fourier_layer(x, self.spect2, self.lin1)
-        x = self.fourier_layer(x, self.spect3, self.lin2)
-
-        # Permute back to (batch, grid_points, width) for the final linear layers
-        x = x.permute(0, 2, 1)
-
-        # Step 3
-        x = self.linear_layer(x, self.linear_q)  # Reduce dimension to 32
-        x = self.output_layer(x)  # Final projection to 1D output
-
-        return x  
-```
+<div align="center">
+  <img src="./models_viz/figs/FNO_Model.png" alt="FNO_Model.png">
+</div>
 
 # Training the FNO1d Model
 
-The below script includes:
-- Training with Adam optimizer and StepLR scheduler for learning rate adjustment.
-- Evaluation metrics:
+We train the model using Adam optimizer and StepLR scheduler for learning rate adjustment. We used the following evaluation metrics:
   - Mean Squared Error (MSE)
   - Mean Absolute Error (MAE)
   - Root Mean Squared Error (RMSE)
   - R² Score (Coefficient of Determination)
   - Relative L2 Error (%)
-- Training and testing results are displayed in a table format for better interpretability.
 
 ```python
 learning_rate = 0.001
