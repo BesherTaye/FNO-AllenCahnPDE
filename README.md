@@ -125,162 +125,23 @@ Number of Features in Input: 2
   <img src="./models_viz/figs/FNO_Model.png" alt="FNO_Model.png">
 </div>
 
-# Training the FNO1d Model
+Our first model implements a Fourier Neural Operator (FNO) which leverages spectral convolutions to learn integral operators efficiently. The model is constructed using **SpectralConv1d** layers, which perform a Fourier transform, apply learnable weights to selected frequency modes, and then transform back using an inverse Fourier transform. The model consists of three such spectral convolution layers, combined with pointwise **Conv1d** layers for refining local features. The model takes an input of shape **(batch, x, 2)** (initial condition and spatial coordinate) and outputs a prediction **(batch, x, 1)** at a future time step. 
 
-We train the model using Adam optimizer and StepLR scheduler for learning rate adjustment. We used the following evaluation metrics:
-  - Mean Squared Error (MSE)
-  - Mean Absolute Error (MAE)
-  - Root Mean Squared Error (RMSE)
-  - R² Score (Coefficient of Determination)
-  - Relative L2 Error (%)
+The training process optimizes an **MSE loss function**:
 
-```python
-learning_rate = 0.001
-epochs = 30
-step_size = 50
-gamma = 0.5
-```
+$$
+\mathcal{L}_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2
+$$
 
-```python
-modes = 16
-width = 64
-```
-The model is initialized and then trained using the specified hyperparameters. 
-```python
-fno = FNO1d(modes, width)
-```
+where:
+- $N$ is the number of samples,
+- $y_i$ is the true value (ground truth) for sample $i$,
+- $\hat{y}_i$ is the predicted value for sample $i$.
 
-```python
-optimizer = Adam(fno.parameters(), lr=learning_rate, weight_decay=1e-5)
+We use **Adam optimizer** with a **learning rate of 0.001**, **weight decay of \(1e-5\)**, and **StepLR scheduler** with a **step size of 50** and **gamma of 0.5**. Performance metrics such as **MSE, MAE, RMSE, R² score, and relative L2 error** are tracked throughout the training and evaluation process. The model is trained for **30 epochs** with periodic evaluation on a test set.
 
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
-# Loss function
-mse_loss_fn = torch.nn.MSELoss()
-mae_loss_fn = torch.nn.L1Loss()
-
-train_mse_history = []
-train_mae_history = []
-train_rmse_history = []
-
-test_mse_history = []
-test_mae_history = []
-test_r2_history = []
-test_rmse_history = []
-test_relative_l2_history = []
-
-freq_print = 1
-
-# Training Loop
-for epoch in range(epochs):
-    fno.train()  
-    train_mse, train_mae, train_rmse = 0.0, 0.0, 0.0 
-
-    # Loop over batches in the training set
-    for step, (input_batch, output_batch) in enumerate(training_set):
-        optimizer.zero_grad()  # Reset gradients
-
-        # Get predictions
-        output_pred_batch = fno(input_batch).squeeze(2)
-
-        loss_mse = mse_loss_fn(output_pred_batch, output_batch)
-        loss_mse.backward()  # Backpropagation
-
-        optimizer.step()  # Update model parameters
-
-        # Compute additional training metrics
-        loss_mae = mae_loss_fn(output_pred_batch, output_batch) 
-        loss_rmse = torch.sqrt(loss_mse)
-
-        train_mse += loss_mse.item()
-        train_mae += loss_mae.item()
-        train_rmse += loss_rmse.item()
-
-    train_mse /= len(training_set)
-    train_mae /= len(training_set)
-    train_rmse /= len(training_set)
-
-    # Store training losses
-    train_mse_history.append(train_mse)
-    train_mae_history.append(train_mae)
-    train_rmse_history.append(train_rmse)
-
-    # Update learning rate
-    scheduler.step()
-
-    # Evaluation on the test set
-    fno.eval() 
-    test_mse, test_mae, test_rmse, test_r2, test_relative_l2 = 0.0, 0.0, 0.0, 0.0, 0.0
-
-    with torch.no_grad():
-        for step, (input_batch, output_batch) in enumerate(testing_set):
-            output_pred_batch = fno(input_batch).squeeze(2)
-
-            mse = mse_loss_fn(output_pred_batch, output_batch)
-            mae = mae_loss_fn(output_pred_batch, output_batch)
-            rmse = torch.sqrt(mse)
-
-            relative_l2 = (torch.mean((output_pred_batch - output_batch) ** 2) / torch.mean(output_batch ** 2)) ** 0.5 * 100
-
-            ss_total = torch.sum((output_batch - torch.mean(output_batch)) ** 2)
-            ss_residual = torch.sum((output_batch - output_pred_batch) ** 2)
-            r2_score = 1 - (ss_residual / ss_total)
-
-            # Accumulate test losses
-            test_mse += mse.item()
-            test_mae += mae.item()
-            test_rmse += rmse.item()
-            test_relative_l2 += relative_l2.item()
-            test_r2 += r2_score.item()
-
-        test_mse /= len(testing_set)
-        test_mae /= len(testing_set)
-        test_rmse /= len(testing_set)
-        test_relative_l2 /= len(testing_set)
-        test_r2 /= len(testing_set)
-
-        # Store test losses
-        test_mse_history.append(test_mse)
-        test_mae_history.append(test_mae)
-        test_rmse_history.append(test_rmse)
-        test_relative_l2_history.append(test_relative_l2)
-        test_r2_history.append(test_r2)
-
-    # Print training and test metrics in a table format
-        if epoch % freq_print == 0:
-          print(f"\nEpoch: {epoch}")
-          print(f"{'Metric':<20}{'Train':<20}{'Test'}")
-          print("-" * 60)
-          print(f"{'MSE':<20}{train_mse:<20f}{test_mse:.6f}")
-          print(f"{'MAE':<20}{train_mae:<20f}{test_mae:.6f}")
-          print(f"{'RMSE':<20}{train_rmse:<20f}{test_rmse:.6f}")
-          print(f"{'R²':<20}{'-':<20}{test_r2:.6f}")  # R² is only for the test set
-          print(f"{'Relative L2 (%)':<20}{'-':<20}{test_relative_l2:.6f}%")  # Only for test
-```
-Last Iterated Outputs:
-
-```
-.
-.
-.
-Epoch: 28
-Metric              Train               Test
-------------------------------------------------------------
-MSE                 0.000729            0.002130
-MAE                 0.014293            0.019510
-RMSE                0.025856            0.042593
-R²                  -                   0.996894
-Relative L2 (%)     -                   5.143578%
-
-Epoch: 29
-Metric              Train               Test
-------------------------------------------------------------
-MSE                 0.000624            0.002351
-MAE                 0.013763            0.019859
-RMSE                0.024232            0.043836
-R²                  -                   0.996572
-Relative L2 (%)     -                   5.293022%
-```
+----
 
 To further understand the model architecture, we summarize its structure using the function below. This summary provides insights into the number of layers, parameters, and computational complexity, helping evaluate the impact of architectural modifications on model performance.
 
