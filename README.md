@@ -344,7 +344,7 @@ gamma = 0.5
 modes = 16
 width = 64
 ```
-The Model is inintialized.
+The model is initialized and then trained using the specified hyperparameters. 
 ```python
 fno = FNO1d(modes, width)
 ```
@@ -824,6 +824,12 @@ model_summary(cnn_model)
 Total Trainable Params: 574241
 574241
 ```
+
+CNN Model Predictions:
+
+<div align="center">
+  <img src="./true_vs_approx_fno2.png" alt="FNO2d Predictions">
+</div>
 
 
 
