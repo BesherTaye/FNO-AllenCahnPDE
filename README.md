@@ -11,26 +11,15 @@ We demonstrate that the FNO outperforms conventional deep learning approaches, s
 
 ## Table of Contents
 
-- [Fourier-Neural-Operator](#fourier-neural-operator)
-- [Operator Learning](#operator-learning)
-- [Import Libraries](#import-libraries)
-- [Fourier Layer](#fourier-layer)
-- [Allen-Cahn Equation](#allen---cahn-equation)
-- [Data Exploration and Visualization](#data-exploration-and-visualization)
-- [FNO1d Model](#fno1d-model)
-- [Training the FNO1d Model](#training-the-fno1d-model)
-- [Testing FNO1d Model Results](#testing-fno1d-model-results)
-- [Fourier Layers](#fourier-layers)
-- [FNO2_1d Model](#fno2_1d-model)
-- [Training the FNO2_1d Model](#training-the-fno2_1d-model)
-- [Testing FNO2_1d Model Results](#testing-fno2_1d-model-results)
-- [Convolutional Neural Networks (CNN)](#convolutional-neural-networks-cnn)
-  - [CNN Model](#cnn-model)
-  - [Training the CNN Model](#training-the-cnn-model)
-  - [Testing CNN Model Results](#testing-cnn-model-results)
-- [FNO vs CNN](#fno-vs-cnn)
-  - [Comparing Metrics](#comparing-metrics)
-
+1. [Fourier Neural Operators (FNOs) for Learning the 1D Allen Cahn Equation](#fourier-neural-operators-fnos-for-learning-the-1d-allen-cahn-equation)
+2. [Neural Operators for Solving PDEs](#neural-operators-for-solving-pdes)
+3. [Fourier Neural Operators (FNOs)](#fourier-neural-operators-fnos)
+   - [Fourier Layer](#fourier-layer)
+4. [Data Exploration and Visualization](#data-exploration-and-visualization)
+5. [Deep Learning Models](#deep-learning-models)
+   - [1. FNO1d Model](#1-fno1d-model)
+   - [2. Convolutional Neural Networks (CNN) Model](#2-convolutional-neural-networks-cnn)
+6. [FNO vs CNN](#fno-vs-cnn)
 
 
 
@@ -119,7 +108,7 @@ Our first model implements a Fourier Neural Operator (FNO) which leverages spect
 
 The training process optimizes an **MSE loss function**:  
 
-$$\mathcal{L}_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2$$
+$$\mathcal{L}{MSE} = \frac{1}{N} \sum{i=1}^{N} (y_i - \hat{y}_i)^2$$
 
 where:
 - $N$ is the number of samples,
