@@ -178,56 +178,17 @@ To evaluate how the **Fourier Neural Operator's (FNO)** predictive capability is
   <img src="./models_viz/figs/new_FNO.png" alt="new_FNO.png">
 </div>
 
-The following sections compare the performance of **FNO1d** and **FNO2_1d**, analyzing their predictions and error metrics on the test dataset.
 
-```python
-fno_2 = FNO2_1d(modes, width)
-```
-
-```python
-model_summary(fno_2)
-```
-
-```
-+---------------------+------------+
-|       Modules       | Parameters |
-+---------------------+------------+
-|   linear_p.weight   |    128     |
-|    linear_p.bias    |     64     |
-|   spect1.weights1   |   65536    |
-|   spect2.weights1   |   65536    |
-|   spect3.weights1   |   65536    |
-|   spect4.weights1   |   65536    |
-|   spect5.weights1   |   65536    |
-|     lin0.weight     |    4096    |
-|      lin0.bias      |     64     |
-|     lin1.weight     |    4096    |
-|      lin1.bias      |     64     |
-|     lin2.weight     |    4096    |
-|      lin2.bias      |     64     |
-|     lin3.weight     |    4096    |
-|      lin3.bias      |     64     |
-|     lin4.weight     |    4096    |
-|      lin4.bias      |     64     |
-|   linear_q.weight   |    2048    |
-|    linear_q.bias    |     32     |
-| output_layer.weight |     32     |
-|  output_layer.bias  |     1      |
-+---------------------+------------+
-Total Trainable Params: 350785
-350785
-```
-FNO2_1d Model Predictions:
+Again, we display the updated model's predictions to visually assess performance:
 
 <div align="center">
   <img src="./figures/true_vs_approx_fno2.png" alt="FNO2d Predictions">
 </div>
 
-As we can see, increasing the number of **Fourier layers** did not significantly improve the model's predictive ability. While the additional layers slightly influenced the results, the overall effect on accuracy and generalization was minimal. This suggests that simply increasing the depth of the Fourier layers may not always lead to better performance and that other factors, such as data quality, regularization, or alternative architectural modifications, might play a more crucial role in enhancing the model’s predictions.
+We can see that increasing the number of **Fourier layers** did not significantly improve the model's predictive ability. While the additional layers slightly influenced the results, the overall effect on accuracy and generalization was minimal. This suggests that simply increasing the depth of the Fourier layers may not always lead to better performance and that other factors, such as data quality, regularization, or alternative architectural modifications, might play a more crucial role in enhancing the model’s predictions.
 
----
 
-# Convolutional Neural Networks (CNN)
+## 2. Convolutional Neural Networks (CNN)
 
 In this section, we investigate the use of Convolutional Neural Networks (CNNs) for solving the Allen-Cahn equation.
 
