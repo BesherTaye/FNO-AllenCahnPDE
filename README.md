@@ -1,8 +1,5 @@
 
 
-<div align="center">
-  <img src="./models_viz/figs/new_FNO.png" alt="new_FNO.png">
-</div>
 
 <div align="center">
   <img src="./models_viz/figs/cnn_model.png" alt="cnn_model.png">
@@ -127,12 +124,9 @@ Number of Features in Input: 2
 
 Our first model implements a Fourier Neural Operator (FNO) which leverages spectral convolutions to learn integral operators efficiently. The model is constructed using **SpectralConv1d** layers, which perform a Fourier transform, apply learnable weights to selected frequency modes, and then transform back using an inverse Fourier transform. The model consists of three such spectral convolution layers, combined with pointwise **Conv1d** layers for refining local features. The model takes an input of shape **(batch, x, 2)** (initial condition and spatial coordinate) and outputs a prediction **(batch, x, 1)** at a future time step. 
 
-The training process optimizes an **MSE loss function**:
+The training process optimizes an **MSE loss function**:  
 
-$$
-\mathcal{L}_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2
-$$
-
+$$\mathcal{L}_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (y_i - \hat{y}_i)^2$$
 
 where:
 - $N$ is the number of samples,
@@ -141,33 +135,7 @@ where:
 
 We use **Adam optimizer** with a **learning rate of 0.001**, **weight decay of \(1e-5\)**, and **StepLR scheduler** with a **step size of 50** and **gamma of 0.5**. Performance metrics such as **MSE, MAE, RMSE, R² score, and relative L2 error** are tracked throughout the training and evaluation process. The model is trained for **30 epochs** with periodic evaluation on a test set.
 
-
-----
-
-To further understand the model architecture, we summarize its structure using the function below. This summary provides insights into the number of layers, parameters, and computational complexity, helping evaluate the impact of architectural modifications on model performance.
-
-```python
-def model_summary(model):
-    table = PrettyTable(["Modules", "Parameters"])
-    total_params = 0
-    for name, parameter in model.named_parameters():
-        if not parameter.requires_grad: continue
-        params = parameter.numel()
-        table.add_row([name, params])
-        total_params+=params
-    print(table)
-    print(f"Total Trainable Params: {total_params}")
-    return total_params
-    total_params+=params
-    print(table)
-    print(f'Total Trainable Params: {total_params}')
-    return total_params
-```
-
-```python
-model_summary(fno)
-```
-
+We summarize our model's structure using a custom made function `model_summary(model)`:
 ```
 +---------------------+------------+
 |       Modules       | Parameters |
@@ -192,22 +160,23 @@ Total Trainable Params: 211393
 211393
 ```
 
-# Testing FNO1d Model Results
+#### Test Prediction
 
-In the following section, we explore the visual results of the Fourier Neural Operator (FNO) model on the test dataset. The predicted outputs are compared with the ground truth, providing insights into the model's ability to learn and generalize patterns in 1D regression tasks.  
-
-These visualizations highlight the model's performance by showcasing the predicted and actual values, helping assess accuracy and error distribution across different test samples.  
-
-The following plots display the model's predictions:
+The following plots display random samples of the model's predictions to visually asses performance and accuracy:
 
 <div align="center">
   <img src="./figures/true_vs_approx.png" alt="FNO1d Predictions">
 </div>
 
 
-# Fourier Layers
+#### Adding More Fourier Layers
 
-To evaluate how the **Fourier Neural Operator's (FNO)** predictive capability is affected, we developed a new model, **FNO2_1d**, using the same hyperparameters but with additional **Fourier layers**. By increasing the model depth, we aim to assess whether the extra layers enhance accuracy and generalization in 1D regression tasks.  
+To evaluate how the **Fourier Neural Operator's (FNO)** predictive capability is affected, we developed a new model, **FNO2_1d**, using the same hyperparameters but with additional **Fourier layers**. By increasing the model depth, we aim to assess whether the extra layers enhance accuracy and generalization.  
+
+
+<div align="center">
+  <img src="./models_viz/figs/new_FNO.png" alt="new_FNO.png">
+</div>
 
 The following sections compare the performance of **FNO1d** and **FNO2_1d**, analyzing their predictions and error metrics on the test dataset.
 
@@ -256,6 +225,7 @@ FNO2_1d Model Predictions:
 
 As we can see, increasing the number of **Fourier layers** did not significantly improve the model's predictive ability. While the additional layers slightly influenced the results, the overall effect on accuracy and generalization was minimal. This suggests that simply increasing the depth of the Fourier layers may not always lead to better performance and that other factors, such as data quality, regularization, or alternative architectural modifications, might play a more crucial role in enhancing the model’s predictions.
 
+---
 
 # Convolutional Neural Networks (CNN)
 
