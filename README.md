@@ -77,6 +77,25 @@ PDE solutions function as operators that map between function spaces, taking inp
 
 
 
+## Fourier Layer
+Since the inputs and outputs of partial differential equations (PDEs) are continuous functions, representing them in Fourier space is often more efficient.
+
+In the spatial domain, convolution corresponds to pointwise multiplication in the Fourier domain. To apply the (global) convolution operator, we first perform a Fourier transform, followed by a linear transformation, and then an inverse Fourier transform.
+
+<div align="center">
+  <img src="./figures/fourier_layer.png" alt="Fourier Layers">
+</div>
+
+The Fourier layer just consists of three steps:
+
+1. Fourier transform (using FFT) $F$
+
+2. Linear transform on the lower Fourier modes $R$
+
+3. Inverse Fourier transform $F^{-1}$
+
+
+We incorporate a Fourier Layer in our implementation `SpectralConv1d`designed to perform convolution in the Fourier domain rather than in the spatial domain.
 
 
 
@@ -95,98 +114,7 @@ from prettytable import PrettyTable
 import pandas as pd
 ```
 
-# Fourier Layer
-Since the inputs and outputs of partial differential equations (PDEs) are continuous functions, representing them in Fourier space is often more efficient.
 
-In the spatial domain, convolution corresponds to pointwise multiplication in the Fourier domain. To apply the (global) convolution operator, we first perform a Fourier transform, followed by a linear transformation, and then an inverse Fourier transform.
-
-<div align="center">
-  <img src="./figures/fourier_layer.png" alt="Fourier Layers">
-</div>
-
-The Fourier layer just consists of three steps:
-
-1. Fourier transform (using FFT) $F$
-
-2. Linear transform on the lower Fourier modes $R$
-
-3. Inverse Fourier transform $F^(-1)$
-
-
-The SpectralConv1d (or Fourier layer) is a specialized layer designed to perform convolution in the Fourier domain rather than in the spatial domain.
-
-```python
-
-class SpectralConv1d(nn.Module):
-    def __init__(self, in_channels, out_channels, modes1):
-        super(SpectralConv1d, self).__init__()
-
-        """
-        1D Fourier layer: It applies FFT, performs a learnable transformation in the frequency domain,
-        and then applies the inverse FFT to bring the data back to the spatial domain.
-        """
-
-        # Input and output channels
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-
-        # Fourier modes
-        self.modes1 = modes1
-
-        # Scaling factor
-        self.scale = (1 / (in_channels * out_channels))
-
-        # Learnable weight parameters (complex numbers) for the Fourier modes
-        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, dtype=torch.cfloat))
-
-    def compl_mul1d(self, input, weights):
-        """
-        Performs complex multiplication between input Fourier coefficients and learnable weights.
-        Uses Einstein summation notation for efficient tensor multiplication.
-
-        Args:
-            input: Fourier-transformed input tensor of shape (batch, in_channels, frequency modes)
-            weights: Learnable weight tensor of shape (in_channels, out_channels, frequency modes)
-
-        Returns:
-            Tensor of shape (batch, out_channels, frequency modes)
-        """
-        return torch.einsum("bix,iox->box", input, weights)
-
-    def forward(self, x):
-        """
-        Forward pass of the Spectral Convolution Layer.
-        1. Apply FFT to transform input to frequency domain.
-        2. Multiply the first 'modes1' Fourier coefficients with learnable weights.
-        3. Apply inverse FFT to transform back to spatial domain.
-
-        Args:
-            x: Input tensor of shape (batch_size, in_channels, number of grid points)
-
-        Returns:
-            Transformed tensor of the same shape as input.
-        """
-
-        batchsize = x.shape[0]  # Extract batch size
-
-        # Step 1: Compute the Fourier Transform (Real FFT) to get frequency components
-        x_ft = torch.fft.rfft(x)
-
-        # Step 2: Create an output tensor for storing transformed Fourier coefficients
-        out_ft = torch.zeros(batchsize, self.out_channels, x.size(-1) // 2 + 1, device=x.device, dtype=torch.cfloat)
-
-        # Step 3: Apply the learnable spectral convolution on the first 'modes1' Fourier coefficients
-        out_ft[:, :, :self.modes1] = self.compl_mul1d(x_ft[:, :, :self.modes1], self.weights1)
-
-        # Step 4: Perform the Inverse Fourier Transform to return to the spatial domain
-        x = torch.fft.irfft(out_ft, n=x.size(-1))
-
-        return x
-```
-# Allen - Cahn Equation
-The Allen-Cahn equation is a reaction-diffusion partial differential equation (PDE) used to model phase separation in multi-phase systems.
-
-$$u_t = \Delta u - ϵ^2 u (u^2 - 1),\quad u\in\mathbb{R}×\mathbb{R_{>0}}$$
 
 # Data Exploration and Visualization
 ```python
