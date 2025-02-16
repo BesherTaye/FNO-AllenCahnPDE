@@ -605,11 +605,11 @@ FNO2_1d Model Predictions:
 As we can see, increasing the number of **Fourier layers** did not significantly improve the model's predictive ability. While the additional layers slightly influenced the results, the overall effect on accuracy and generalization was minimal. This suggests that simply increasing the depth of the Fourier layers may not always lead to better performance and that other factors, such as data quality, regularization, or alternative architectural modifications, might play a more crucial role in enhancing the model’s predictions.
 
 
-# FNO vs CNN
+# Convolutional Neural Networks (CNN)
 
-In this section, we explore the comparison between Fourier Neural Operators (FNO) and Convolutional Neural Networks (CNN) for solving the Allen-Cahn equation.
+In this section, we investigate the use of Convolutional Neural Networks (CNNs) for solving the Allen-Cahn equation.
 
-The goal is to evaluate how these two model architectures perform when applied to the same problem, focusing on their ability to approximate solutions to the Allen-Cahn equation effectively.
+The goal is to evaluate how two model architectures (FNOs & CNNs) perform when applied to the same problem, focusing on their ability to approximate solutions to the Allen-Cahn equation effectively.
 
 ## CNN Model
 
@@ -828,13 +828,21 @@ Total Trainable Params: 574241
 CNN Model Predictions:
 
 <div align="center">
-  <img src="./true_vs_approx_fno2.png" alt="FNO2d Predictions">
+  <img src="./true_vs_approx_cnn.png" alt="CNN Predictions">
 </div>
 
 
+# FNO vs CNN
+
+In this section, we compare the performance of Fourier Neural Operators (FNO) and Convolutional Neural Networks (CNNs) in solving the Allen-Cahn equation.
+
+## Testing Loss Curve
+
+The Testing Loss Curve compares the performance of the FNO, FNO_2, and CNN models over 30 epochs.
 
 
-
-
+<div align="center">
+  <img src="./true_vs_approx_cnn.png" alt="CNN Predictions">
+</div>
 
 
